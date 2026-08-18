@@ -5,8 +5,8 @@
  */
 function drawSyntheticDocument(canvas, person, type = "PAN", photoDataUrl = null) {
   const ctx = canvas.getContext("2d");
-  
-  // Set dimensions once on canvas element directly
+
+  // Fix dimensions once on canvas element
   if (canvas.width !== 856 || canvas.height !== 539) {
     canvas.width = 856;
     canvas.height = 539;
@@ -15,42 +15,38 @@ function drawSyntheticDocument(canvas, person, type = "PAN", photoDataUrl = null
   const w = canvas.width;
   const h = canvas.height;
 
-  // Clear previous canvas frame completely
+  // Clear previous frame completely
   ctx.clearRect(0, 0, w, h);
 
-  // Photo frame positioning
   const photoX = 580;
   const photoY = 140;
   const photoW = 210;
   const photoH = 260;
 
-  function executeRendering() {
-    ctx.save();
-    roundRectClip(ctx, 0, 0, w, h, 24);
+  ctx.save();
+  roundRectClip(ctx, 0, 0, w, h, 24);
 
-    if (type === "PAN") {
-      renderPanCard(ctx, person);
-    } else if (type === "AADHAAR") {
-      renderAadhaarCard(ctx, person);
-    }
-
-    if (photoDataUrl) {
-      const img = new Image();
-      img.onload = () => {
-        ctx.save();
-        roundRectClip(ctx, photoX, photoY, photoW, photoH, 12);
-        ctx.drawImage(img, photoX, photoY, photoW, photoH);
-        ctx.restore();
-      };
-      img.src = photoDataUrl;
-    } else {
-      drawAvatarSilhouette(ctx, photoX, photoY, photoW, photoH);
-    }
-
-    ctx.restore();
+  if (type === "PAN") {
+    renderPanCard(ctx, person);
+  } else if (type === "AADHAAR") {
+    renderAadhaarCard(ctx, person);
   }
 
-  executeRendering();
+  // Draw user photo or default silhouette
+  if (photoDataUrl) {
+    const img = new Image();
+    img.onload = () => {
+      ctx.save();
+      roundRectClip(ctx, photoX, photoY, photoW, photoH, 12);
+      ctx.drawImage(img, photoX, photoY, photoW, photoH);
+      ctx.restore();
+    };
+    img.src = photoDataUrl;
+  } else {
+    drawAvatarSilhouette(ctx, photoX, photoY, photoW, photoH);
+  }
+
+  ctx.restore();
 }
 
 /**
@@ -70,7 +66,7 @@ function renderPanCard(ctx, person) {
   // Decorative waves
   drawWavePattern(ctx, 180, 200, "rgba(165, 204, 247, 0.2)");
 
-  // Border
+  // Outer Border Line
   ctx.strokeStyle = "#cbd5e1";
   ctx.lineWidth = 2;
   ctx.strokeRect(0, 0, w, h);
@@ -93,11 +89,13 @@ function renderPanCard(ctx, person) {
   ctx.font = "bold 15px Arial, sans-serif";
   ctx.fillText("GOVT. OF INDIA", 680, 70);
 
-  // Center Emblem & Hologram
-  drawEmblemIcon(ctx, w / 2 - 20, 20, 40, 55, "#3b82f6");
+  // Central Pillar Emblem (Vector Pillared Crest)
+  drawPillarEmblem(ctx, w / 2 - 20, 20, 40, 55, "#3b82f6");
+
+  // Hologram Placeholder
   drawHologramBox(ctx, 420, 140, 130, 130);
 
-  // Form Field Styles
+  // Dynamic Form Data Styles
   const labelStyle = { font: "12px Arial", color: "#64748b" };
   const valueStyle = { font: "bold 18px Arial, sans-serif", color: "#0f172a" };
 
@@ -106,7 +104,7 @@ function renderPanCard(ctx, person) {
   drawField(ctx, "DATE OF BIRTH", person.dob || "", 290, 40, labelStyle, valueStyle);
   drawField(ctx, "PAN TEST NUMBER", person.pan || "", 360, 40, labelStyle, valueStyle);
 
-  // Address Line
+  // Address
   ctx.fillStyle = labelStyle.color;
   ctx.font = labelStyle.font;
   ctx.fillText("ADDRESS", 40, 430);
@@ -136,12 +134,12 @@ function renderAadhaarCard(ctx, person) {
   ctx.font = "bold 15px Arial, sans-serif";
   ctx.fillText("GOVERNMENT OF INDIA", w / 2 - 80, 65);
 
-  // Tri-color Top Strip
+  // Tri-color Ribbon Strip
   ctx.fillStyle = "#f97316"; ctx.fillRect(30, 80, (w - 60) / 3, 4);
   ctx.fillStyle = "#cbd5e1"; ctx.fillRect(30 + (w - 60) / 3, 80, (w - 60) / 3, 4);
   ctx.fillStyle = "#16a34a"; ctx.fillRect(30 + (2 * (w - 60) / 3), 80, (w - 60) / 3, 4);
 
-  drawEmblemIcon(ctx, 40, 20, 35, 50, "#334155");
+  drawPillarEmblem(ctx, 40, 20, 35, 50, "#334155");
   drawFingerprintIcon(ctx, 740, 20, 45, 45);
 
   const labelStyle = { font: "14px Arial", color: "#475569" };
@@ -151,7 +149,7 @@ function renderAadhaarCard(ctx, person) {
   drawField(ctx, "DOB", person.dob || "", 190, 40, labelStyle, valueStyle);
   drawField(ctx, "GENDER", person.gender || "", 240, 40, labelStyle, valueStyle);
 
-  // Address
+  // Address Line
   ctx.fillStyle = labelStyle.color;
   ctx.font = labelStyle.font;
   ctx.fillText("ADDRESS: ", 40, 290);
@@ -159,7 +157,7 @@ function renderAadhaarCard(ctx, person) {
   ctx.font = valueStyle.font;
   ctx.fillText(person.address || "", 120, 290);
 
-  // Centered ID
+  // Centered ID Number
   ctx.font = "bold 32px Arial, sans-serif";
   ctx.fillStyle = "#0f172a";
   const str = person.aadhaar || "[Aadhaar Redacted]";
@@ -175,7 +173,7 @@ function renderAadhaarCard(ctx, person) {
   drawDisclaimerText(ctx, w / 2, h - 16, "#94a3b8", "11px");
 }
 
-// Drawing Helper Routines
+// Vector Drawing Helper Routines
 
 function drawField(ctx, label, value, y, startX, labelStyle, valueStyle) {
   ctx.fillStyle = labelStyle.color;
@@ -196,6 +194,28 @@ function drawDisclaimerText(ctx, x, y, color = "#94a3b8", font = "11px Arial") {
   ctx.restore();
 }
 
+/**
+ * Modern vector emblem drawing (3 vertical pillars + base)
+ */
+function drawPillarEmblem(ctx, x, y, w, h, color) {
+  ctx.save();
+  ctx.fillStyle = color;
+
+  // Base
+  ctx.fillRect(x, y + h * 0.85, w, h * 0.15);
+
+  // Top Cap
+  ctx.fillRect(x + 2, y, w - 4, h * 0.12);
+
+  // 3 Central Pillars
+  const pillarW = w * 0.2;
+  ctx.fillRect(x + w * 0.1, y + h * 0.15, pillarW, h * 0.68);
+  ctx.fillRect(x + w * 0.4, y + h * 0.15, pillarW, h * 0.68);
+  ctx.fillRect(x + w * 0.7, y + h * 0.15, pillarW, h * 0.68);
+
+  ctx.restore();
+}
+
 function drawAvatarSilhouette(ctx, x, y, w, h) {
   ctx.save();
   roundRectClip(ctx, x, y, w, h, 10);
@@ -204,7 +224,7 @@ function drawAvatarSilhouette(ctx, x, y, w, h) {
 
   ctx.fillStyle = "#94a3b8";
 
-  // Body
+  // Shoulder Body
   ctx.beginPath();
   ctx.moveTo(x + w * 0.1, y + h);
   ctx.lineTo(x + w * 0.9, y + h);
@@ -213,7 +233,7 @@ function drawAvatarSilhouette(ctx, x, y, w, h) {
   ctx.closePath();
   ctx.fill();
 
-  // Head
+  // Head Circle
   ctx.beginPath();
   ctx.arc(x + w / 2, y + h * 0.35, w * 0.22, 0, Math.PI * 2);
   ctx.fill();
@@ -223,22 +243,6 @@ function drawAvatarSilhouette(ctx, x, y, w, h) {
   ctx.strokeRect(x, y, w, h);
   ctx.restore();
 }
-
-function drawEmblemIcon(ctx, x, y, w, h, color) {
-  ctx.save();
-  ctx.fillStyle = color;
-  ctx.fillRect(x + w * 0.4, y, w * 0.2, h);
-  ctx.fillRect(x, y + h * 0.8, w, h * 0.2);
-  ctx.restore();
-}
-
-// function drawEmblemImage(ctx, x, y, w, h, imageSrc) {
-//   const img = new Image();
-//   img.onload = () => {
-//     ctx.drawImage(img, x, y, w, h);
-//   };
-//   img.src = imageSrc; // e.g., 'assets/emblem.png'
-// }
 
 function drawFingerprintIcon(ctx, x, y, w, h) {
   ctx.save();
@@ -304,7 +308,6 @@ function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
   ctx.fillText(line, x, y);
 }
 
-// Fixed Round Rectangle Clip Function
 function roundRectClip(ctx, x, y, width, height, radius) {
   ctx.beginPath();
   ctx.moveTo(x + radius, y);
