@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OCR Test Data Generator</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <h1>OCR Test Data Generator</h1>
+      <p>Generate synthetic test documents from manual data or Excel rows.</p>
+    </header>
+
+    <section class="card">
+      <div class="actions">
+        <button id="downloadTemplate" class="secondary">Download Sample Excel</button>
+        <label class="file-btn">
+          Upload Excel
+          <input id="excelFile" type="file" accept=".xlsx,.xls,.csv" hidden>
+        </label>
+      </div>
+      <p class="hint">Required Excel headers: Name, DOB, Gender, Address. Optional: ParentName. PAN/Aadhaar test IDs are generated automatically.</p>
+      <div id="fileStatus" class="status"></div>
+    </section>
+
+    <section class="grid">
+      <div class="card">
+        <h2>Person Data</h2>
+        <form id="personForm">
+          <label>Name<input id="name" required placeholder="Omkar Gundare"></label>
+          <label>Date of Birth<input id="dob" type="date" required></label>
+          <label>Gender
+            <select id="gender">
+              <option>Male</option><option>Female</option><option>Other</option>
+            </select>
+          </label>
+          <label>Parent / Father Name<input id="parentName" placeholder="Test Parent"></label>
+          <label>Address<textarea id="address" required placeholder="Latur, Maharashtra"></textarea></label>
+          <label>Photo <input id="photo" type="file" accept="image/*"></label>
+          <div class="actions">
+            <button type="submit">Generate Preview</button>
+            <button type="button" id="clearBtn" class="secondary">Clear</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Preview</h2>
+        <div class="preview-type">
+          <button type="button" id="previewPan">PAN Test</button>
+          <button type="button" id="previewAadhaar" class="secondary">Aadhaar Test</button>
+        </div>
+        <canvas id="documentCanvas" width="1200" height="760"></canvas>
+        <div class="actions">
+          <button id="downloadPan" disabled>Download PAN JPG</button>
+          <button id="downloadAadhaar" disabled>Download Aadhaar JPG</button>
+          <button id="downloadAllPan" class="secondary" disabled>Download All PAN</button>
+          <button id="downloadAllAadhaar" class="secondary" disabled>Download All Aadhaar</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row-between">
+        <h2>Excel Rows</h2>
+        <span id="rowCount">0 rows</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Name</th><th>DOB</th><th>Gender</th><th>Address</th><th>Test PAN / Test Aadhaar</th></tr></thead>
+          <tbody id="rowsBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/data-generator.js"></script>
+  <script src="js/document-renderer.js"></script>
+  <script src="js/image-export.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
