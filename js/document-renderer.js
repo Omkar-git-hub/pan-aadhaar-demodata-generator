@@ -92,8 +92,9 @@ function renderPanCard(ctx, person) {
   // Central Pillar Emblem (Vector Pillared Crest)
   drawPillarEmblem(ctx, w / 2 - 20, 20, 40, 55, "#3b82f6");
 
-  // Hologram Placeholder
+  // Hologram Box with QR Code rendered inside
   drawHologramBox(ctx, 420, 140, 130, 130);
+  drawMockQrCode(ctx, 425, 145, 120, 120);
 
   // Dynamic Form Data Styles
   const labelStyle = { font: "12px Arial", color: "#64748b" };
