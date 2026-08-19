@@ -46,10 +46,47 @@ $("clearBtn").onclick = () => {
   enableButtons(false);
 };
 
+
+$("downloadTemplate").onclick = () => {
+  if (!window.OCR_TEMPLATE_BASE64) {
+    setStatus("Sample Excel template is not available.");
+    return;
+  }
+
+  const binary = atob(window.OCR_TEMPLATE_BASE64);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  const blob = new Blob(
+    [bytes],
+    {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    }
+  );
+
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "ocr-test-data-template.xlsx";
+
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  setStatus("Sample Excel downloaded.");
+};
+
 $("downloadPan").onclick = () => downloadPerson("PAN");
 $("downloadAadhaar").onclick = () => downloadPerson("AADHAAR");
 $("downloadAllPan").onclick = () => downloadAll("PAN");
 $("downloadAllAadhaar").onclick = () => downloadAll("AADHAAR");
+
 
 async function downloadPerson(type) {
   const person = currentPerson || {
