@@ -42,14 +42,12 @@ function generateRandomName() {
     const firstNames = [
         "RAHUL", "PRIYA", "AMIT", "SUNITA", "VIKRAM", "NEHA", "RAJ", "ANJALI",
         "SURESH", "KAVITA", "MANOJ", "POOJA", "DEEPAK", "RITU", "SANJAY", "NISHA",
-        "ASHOK", "MEERA", "VIVEK", "SAPNA", "RAJESH", "SWATI", "ANAND", "SUMAN",
-        "JOHN", "MARY", "PETER", "SARA", "MICHAEL", "EMMA", "DAVID", "OLIVIA"
+        "ASHOK", "MEERA", "VIVEK", "SAPNA", "RAJESH", "SWATI", "ANAND", "SUMAN"
     ];
     
     const lastNames = [
         "SHARMA", "VERMA", "PATEL", "KUMAR", "SINGH", "REDDY", "RAO", "GUPTA",
-        "JOSHI", "NAIR", "MENON", "PILLAI", "MEHTA", "CHAWLA", "MALHOTRA", "SETH",
-        "SMITH", "JOHNSON", "WILLIAMS", "BROWN", "JONES", "GARCIA", "MILLER", "DAVIS"
+        "JOSHI", "NAIR", "MENON", "PILLAI", "MEHTA", "CHAWLA", "MALHOTRA", "SETH"
     ];
     
     const first = firstNames[Math.floor(Math.random() * firstNames.length)];
@@ -60,14 +58,12 @@ function generateRandomName() {
 function generateRandomFatherName() {
     const fatherNames = [
         "RAM", "MOHAN", "RAJ", "SURESH", "DINESH", "MAHESH", "RAMESH", "KISHAN",
-        "HARI", "GOPAL", "PREM", "CHANDER", "BHUPESH", "RAJENDRA", "MAHENDRA",
-        "JOHN", "MICHAEL", "DAVID", "ROBERT", "JAMES", "WILLIAM", "CHARLES"
+        "HARI", "GOPAL", "PREM", "CHANDER", "BHUPESH", "RAJENDRA", "MAHENDRA"
     ];
     
     const lastNames = [
         "SHARMA", "VERMA", "PATEL", "KUMAR", "SINGH", "REDDY", "RAO", "GUPTA",
-        "JOSHI", "NAIR", "MENON", "PILLAI", "MEHTA", "CHAWLA", "MALHOTRA",
-        "SMITH", "JOHNSON", "WILLIAMS", "BROWN", "JONES", "GARCIA"
+        "JOSHI", "NAIR", "MENON", "PILLAI", "MEHTA", "CHAWLA", "MALHOTRA"
     ];
     
     const first = fatherNames[Math.floor(Math.random() * fatherNames.length)];
@@ -134,8 +130,16 @@ function generateBulkTestData(count = 10) {
 }
 
 // ============================================================
-// EXISTING FUNCTIONS (Keep these)
+// EXISTING FUNCTIONS - THESE MUST BE GLOBALLY AVAILABLE
 // ============================================================
+
+// ✅ This is the function that was missing - now it's defined globally
+function makeTestIds(index = 0) {
+    return {
+        pan: makePanTestId(index),
+        aadhaar: makeAadhaarTestId()
+    };
+}
 
 function makePanTestId(index = 0) {
     return generatePANNumber();
@@ -143,13 +147,6 @@ function makePanTestId(index = 0) {
 
 function makeAadhaarTestId() {
     return generateAadharNumber();
-}
-
-function makeTestIds(index = 0) {
-    return {
-        pan: makePanTestId(index),
-        aadhaar: makeAadhaarTestId()
-    };
 }
 
 function randomLetters(n) {

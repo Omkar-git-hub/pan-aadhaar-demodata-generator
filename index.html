@@ -27,7 +27,7 @@
     src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js">
   </script>
 
-  <!-- ✅ SAMPLE EXCEL GENERATOR WITH PAN AND AADHAAR -->
+  <!-- ✅ SAMPLE EXCEL GENERATOR -->
   <script>
   function generateSampleExcel() {
       // Sample data with headers - INCLUDING PAN and AADHAAR
@@ -90,14 +90,11 @@
   document.addEventListener('DOMContentLoaded', function() {
       const downloadBtn = document.getElementById('downloadTemplate');
       if (downloadBtn) {
-          // Remove existing event listeners by cloning
           const newBtn = downloadBtn.cloneNode(true);
           downloadBtn.parentNode.replaceChild(newBtn, downloadBtn);
           
-          // Add new click handler
           newBtn.addEventListener('click', function(e) {
               e.preventDefault();
-              // Check if XLSX is loaded
               if (typeof XLSX === 'undefined') {
                   const statusEl = document.getElementById('fileStatus');
                   if (statusEl) {
@@ -109,7 +106,6 @@
           });
       }
       
-      // Initialize status
       const statusEl = document.getElementById('fileStatus');
       if (statusEl && !statusEl.textContent) {
           statusEl.textContent = 'Ready. Enter data or upload Excel.';
@@ -321,7 +317,7 @@
               Clear
             </button>
 
-            <!-- ✅ Generate 10 Random Button -->
+            <!-- Generate 10 Random Button -->
             <button
               type="button"
               id="generateBulkBtn"
@@ -385,7 +381,7 @@
         <div class="actions">
 
 
-          <!-- Existing: Single PAN -->
+          <!-- Single PAN -->
           <button
             id="downloadPan"
             disabled
@@ -394,7 +390,7 @@
           </button>
 
 
-          <!-- Existing: Single Aadhaar -->
+          <!-- Single Aadhaar -->
           <button
             id="downloadAadhaar"
             disabled
@@ -403,7 +399,7 @@
           </button>
 
 
-          <!-- Existing: All PAN -->
+          <!-- All PAN -->
           <button
             id="downloadAllPan"
             class="secondary"
@@ -413,7 +409,7 @@
           </button>
 
 
-          <!-- Existing: All Aadhaar -->
+          <!-- All Aadhaar -->
           <button
             id="downloadAllAadhaar"
             class="secondary"
@@ -423,10 +419,7 @@
           </button>
 
 
-          <!-- =================================================
-               NEW: PAN ZIP
-               ================================================= -->
-
+          <!-- PAN ZIP -->
           <button
             id="downloadPanZip"
             class="secondary"
@@ -436,16 +429,24 @@
           </button>
 
 
-          <!-- =================================================
-               NEW: AADHAAR ZIP
-               ================================================= -->
-
+          <!-- AADHAAR ZIP -->
           <button
             id="downloadAadhaarZip"
             class="secondary"
             disabled
           >
             Download Aadhaar ZIP
+          </button>
+
+
+          <!-- ✅ NEW: Combined PAN + Aadhaar ZIP -->
+          <button
+            id="downloadBothZip"
+            class="secondary"
+            disabled
+            style="background: #1a3c6e; color: white; font-weight: bold;"
+          >
+            📦 Download Both (PAN + Aadhaar) ZIP
           </button>
 
         </div>

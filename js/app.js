@@ -1,4 +1,4 @@
-// js/app.js - Complete Updated Version with Proper File Naming
+// js/app.js - Complete Updated Version with Combined Download
 
 // ============================================================
 // STATE MANAGEMENT
@@ -84,7 +84,6 @@ function readForm() {
 function handleFormSubmit(e) {
     e.preventDefault();
     
-    // Generate PAN and Aadhar automatically
     const ids = makeTestIds(0);
     
     AppState.currentPerson = {
@@ -125,13 +124,11 @@ $("clearBtn").onclick = handleClear;
 // ============================================================
 
 function downloadTemplate() {
-    // Use the generateSampleExcel function from HTML if available
     if (typeof generateSampleExcel === 'function') {
         generateSampleExcel();
         return;
     }
     
-    // Fallback: try using base64
     if (!window.OCR_TEMPLATE_BASE64) {
         setStatus("Sample Excel template is not available.");
         return;
@@ -176,7 +173,6 @@ function processExcelData(rows, keys) {
             return normalized === "parentname" || normalized === "fathername";
         });
 
-        // Check if PAN and Aadhaar already exist in Excel
         const panKey = keys.find(k => k.trim().toLowerCase() === "pan");
         const aadhaarKey = keys.find(k => k.trim().toLowerCase() === "aadhaar");
 
@@ -188,7 +184,6 @@ function processExcelData(rows, keys) {
             gender: String(find("Gender")).trim(),
             address: String(find("Address")).trim(),
             parentName: parentKey ? String(r[parentKey] || "").trim() : "",
-            // Use existing PAN/Aadhaar from Excel if available, otherwise generate
             pan: panKey ? String(r[panKey] || "").trim() || ids.pan : ids.pan,
             aadhaar: aadhaarKey ? String(r[aadhaarKey] || "").trim() || ids.aadhaar : ids.aadhaar
         };
@@ -240,7 +235,7 @@ $("excelFile").addEventListener("change", async e => {
 });
 
 // ============================================================
-// DOWNLOAD FUNCTIONS - UPDATED FILE NAMING
+// DOWNLOAD FUNCTIONS
 // ============================================================
 
 function getPersonForDownload() {
@@ -254,14 +249,12 @@ function getPersonForDownload() {
     };
 }
 
-// ✅ UPDATED: Download single document with proper naming
 async function downloadPerson(type) {
     const person = getPersonForDownload();
     
     drawSyntheticDocument(canvas, person, type, AppState.photoDataUrl);
     await new Promise(resolve => setTimeout(resolve, 100));
 
-    // File naming: person_name_pannumber_pan or person_name_aadharnumber_aadhaar
     const safeName = person.name.replace(/\s+/g, '_').toUpperCase();
     const id = type === "PAN" ? person.pan : person.aadhaar;
     const docType = type.toLowerCase();
@@ -270,7 +263,6 @@ async function downloadPerson(type) {
     setStatus(`Downloaded ${type} card for ${person.name}`);
 }
 
-// Download button handlers
 $("downloadPan").onclick = () => downloadPerson("PAN");
 $("downloadAadhaar").onclick = () => downloadPerson("AADHAAR");
 
@@ -278,7 +270,6 @@ $("downloadAadhaar").onclick = () => downloadPerson("AADHAAR");
 // BULK DOWNLOAD - INDIVIDUAL IMAGES
 // ============================================================
 
-// ✅ UPDATED: Download all with proper naming
 async function downloadAll(type) {
     if (!AppState.excelRows.length) {
         setStatus("No Excel rows available.");
@@ -293,7 +284,6 @@ async function downloadAll(type) {
         drawSyntheticDocument(canvas, person, type, AppState.photoDataUrl);
         await new Promise(resolve => setTimeout(resolve, 80));
         
-        // File naming: sequence_person_name_pannumber_pan
         const safeName = person.name.replace(/\s+/g, '_').toUpperCase();
         const id = type === "PAN" ? person.pan : person.aadhaar;
         const docType = type.toLowerCase();
@@ -313,7 +303,6 @@ $("downloadAllAadhaar").onclick = () => downloadAll("AADHAAR");
 // BULK DOWNLOAD - ZIP
 // ============================================================
 
-// ✅ UPDATED: Download all as ZIP with proper naming
 async function downloadAllZip(type) {
     if (!AppState.excelRows.length) {
         setStatus("No Excel rows available.");
@@ -343,7 +332,6 @@ async function downloadAllZip(type) {
             return;
         }
 
-        // File naming: sequence_person_name_pannumber_pan
         const safeName = person.name.replace(/\s+/g, '_').toUpperCase();
         const id = type === "PAN" ? person.pan : person.aadhaar;
         const docType = type.toLowerCase();
@@ -376,6 +364,87 @@ $("downloadPanZip").onclick = () => downloadAllZip("PAN");
 $("downloadAadhaarZip").onclick = () => downloadAllZip("AADHAAR");
 
 // ============================================================
+// ✅ NEW: COMBINED DOWNLOAD - BOTH PAN AND AADHAAR IN ONE ZIP
+// ============================================================
+
+async function downloadBothZip() {
+    if (!AppState.excelRows.length) {
+        setStatus("No Excel rows available.");
+        return;
+    }
+
+    if (typeof JSZip === "undefined") {
+        setStatus("ZIP library is not available. Please check the JSZip CDN.");
+        return;
+    }
+
+    const zip = new JSZip();
+    
+    // Create separate folders for PAN and Aadhaar
+    const panFolder = zip.folder("PAN_Cards");
+    const aadhaarFolder = zip.folder("Aadhaar_Cards");
+
+    setStatus(`Preparing ${AppState.excelRows.length} records for both PAN and Aadhaar...`);
+
+    // Store original type to restore later
+    const originalType = AppState.currentType;
+
+    for (let i = 0; i < AppState.excelRows.length; i++) {
+        const person = AppState.excelRows[i];
+        const seq = String(i + 1).padStart(3, "0");
+        const safeName = person.name.replace(/\s+/g, '_').toUpperCase();
+
+        // === Generate PAN ===
+        AppState.currentType = "PAN";
+        drawSyntheticDocument(canvas, person, "PAN", AppState.photoDataUrl);
+        await new Promise(resolve => setTimeout(resolve, 80));
+
+        let blob = await canvasToJpgBlob(canvas, 0.78);
+        if (blob) {
+            const panFilename = `${seq}_${safeName}_${person.pan}_pan.jpg`;
+            panFolder.file(panFilename, blob);
+        }
+
+        // === Generate Aadhaar ===
+        AppState.currentType = "AADHAAR";
+        drawSyntheticDocument(canvas, person, "AADHAAR", AppState.photoDataUrl);
+        await new Promise(resolve => setTimeout(resolve, 80));
+
+        blob = await canvasToJpgBlob(canvas, 0.78);
+        if (blob) {
+            const aadhaarFilename = `${seq}_${safeName}_${person.aadhaar.replace(/\s/g, '_')}_aadhaar.jpg`;
+            aadhaarFolder.file(aadhaarFilename, blob);
+        }
+
+        setStatus(`Generated ${i + 1} / ${AppState.excelRows.length} records (PAN + Aadhaar)`);
+    }
+
+    // Restore original type
+    AppState.currentType = originalType;
+
+    setStatus(`Creating combined ZIP file with PAN and Aadhaar cards...`);
+    const zipBlob = await zip.generateAsync({
+        type: "blob",
+        compression: "DEFLATE",
+        compressionOptions: { level: 6 }
+    });
+
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `PAN_and_Aadhaar_Cards.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    
+    setStatus(`✅ Completed: ${AppState.excelRows.length} records downloaded as combined ZIP (PAN + Aadhaar).`);
+}
+
+// Add event listener for the new button
+$("downloadBothZip").onclick = () => downloadBothZip();
+
+// ============================================================
 // UI HELPERS
 // ============================================================
 
@@ -383,7 +452,8 @@ function enableButtons(on) {
     const buttons = [
         "downloadPan", "downloadAadhaar",
         "downloadAllPan", "downloadAllAadhaar",
-        "downloadPanZip", "downloadAadhaarZip"
+        "downloadPanZip", "downloadAadhaarZip",
+        "downloadBothZip"
     ];
     
     buttons.forEach(id => {
@@ -474,7 +544,6 @@ function generateBulkData(count = 10) {
     return bulkData;
 }
 
-// Add Bulk Generation button handler
 const bulkBtn = $("generateBulkBtn");
 if (bulkBtn) {
     bulkBtn.addEventListener("click", () => {
