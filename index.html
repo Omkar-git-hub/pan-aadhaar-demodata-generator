@@ -27,6 +27,96 @@
     src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js">
   </script>
 
+  <!-- ✅ SAMPLE EXCEL GENERATOR WITH PAN AND AADHAAR -->
+  <script>
+  function generateSampleExcel() {
+      // Sample data with headers - INCLUDING PAN and AADHAAR
+      const sampleData = [
+          ['Name', 'DOB', 'Gender', 'Address', 'ParentName', 'PAN', 'Aadhaar'],
+          ['RAHUL SHARMA', '15/08/1990', 'Male', '123, MG Road, Mumbai, Maharashtra', 'RAJ SHARMA', 'ABCDE1234F', '1234 5678 9012'],
+          ['PRIYA VERMA', '20/12/1992', 'Female', '456, Park Street, Delhi', 'SURESH VERMA', 'PQRST5678G', '2345 6789 0123'],
+          ['AMIT KUMAR', '10/03/1988', 'Male', '789, Main Road, Bangalore, Karnataka', 'RAMESH KUMAR', 'LMNOP9012H', '3456 7890 1234'],
+          ['SUNITA PATEL', '05/06/1995', 'Female', '321, Church Street, Chennai, Tamil Nadu', 'MUKESH PATEL', 'FGHIJ3456I', '4567 8901 2345'],
+          ['VIKRAM SINGH', '22/08/1987', 'Male', '654, Commercial Road, Hyderabad, Telangana', 'MAHENDRA SINGH', 'UVWXY7890J', '5678 9012 3456'],
+          ['ANJALI REDDY', '14/11/1993', 'Female', '987, Residency Road, Hyderabad, Telangana', 'KRISHNA REDDY', 'ZABCD2345K', '6789 0123 4567'],
+          ['DEEPAK JOSHI', '08/04/1991', 'Male', '246, Lake View, Pune, Maharashtra', 'RAJENDRA JOSHI', 'EFGHI6789L', '7890 1234 5678'],
+          ['NEHA PATEL', '19/07/1994', 'Female', '753, Temple Road, Ahmedabad, Gujarat', 'MUKESH PATEL', 'JKLMN0123M', '8901 2345 6789'],
+          ['RAJESH KUMAR', '25/01/1989', 'Male', '159, Station Road, Lucknow, Uttar Pradesh', 'RAMESH KUMAR', 'OPQRS4567N', '9012 3456 7890']
+      ];
+      
+      // Convert to worksheet
+      const ws = XLSX.utils.aoa_to_sheet(sampleData);
+      
+      // Set column widths
+      ws['!cols'] = [
+          { wch: 25 },  // Name
+          { wch: 15 },  // DOB
+          { wch: 12 },  // Gender
+          { wch: 45 },  // Address
+          { wch: 25 },  // ParentName
+          { wch: 15 },  // PAN
+          { wch: 20 }   // Aadhaar
+      ];
+      
+      // Create workbook
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Sample Data");
+      
+      // Generate Excel file
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+      
+      // Create blob and download
+      const blob = new Blob([wbout], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ocr-test-data-template.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      
+      // Update status
+      const statusEl = document.getElementById('fileStatus');
+      if (statusEl) {
+          statusEl.textContent = '✅ Sample Excel downloaded successfully!';
+          setTimeout(() => {
+              statusEl.textContent = 'Ready. Upload your Excel file or generate data.';
+          }, 4000);
+      }
+  }
+
+  // Override the download template when DOM is ready
+  document.addEventListener('DOMContentLoaded', function() {
+      const downloadBtn = document.getElementById('downloadTemplate');
+      if (downloadBtn) {
+          // Remove existing event listeners by cloning
+          const newBtn = downloadBtn.cloneNode(true);
+          downloadBtn.parentNode.replaceChild(newBtn, downloadBtn);
+          
+          // Add new click handler
+          newBtn.addEventListener('click', function(e) {
+              e.preventDefault();
+              // Check if XLSX is loaded
+              if (typeof XLSX === 'undefined') {
+                  const statusEl = document.getElementById('fileStatus');
+                  if (statusEl) {
+                      statusEl.textContent = '❌ XLSX library not loaded. Please refresh the page.';
+                  }
+                  return;
+              }
+              generateSampleExcel();
+          });
+      }
+      
+      // Initialize status
+      const statusEl = document.getElementById('fileStatus');
+      if (statusEl && !statusEl.textContent) {
+          statusEl.textContent = 'Ready. Enter data or upload Excel.';
+      }
+  });
+  </script>
+
 </head>
 
 
@@ -86,10 +176,7 @@
 
 
       <p class="hint">
-        Required Excel headers:
-        Name, DOB, Gender, Address.
-        Optional: ParentName.
-        PAN/Aadhaar test IDs are generated automatically.
+        Required Excel headers: Name, DOB, Gender, Address. Optional: ParentName, PAN, Aadhaar. PAN/Aadhaar test IDs are generated automatically if not provided.
       </p>
 
 
@@ -234,7 +321,7 @@
               Clear
             </button>
 
-            <!-- ✅ NEW: Generate 10 Random Button -->
+            <!-- ✅ Generate 10 Random Button -->
             <button
               type="button"
               id="generateBulkBtn"

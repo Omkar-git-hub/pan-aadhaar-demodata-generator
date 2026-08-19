@@ -1,4 +1,4 @@
-// js/document-renderer.js - PAN Card with Light Blue Shade
+// js/document-renderer.js - Complete Working Version
 
 // ============================================================
 // CONSTANTS
@@ -60,7 +60,7 @@ function drawPhoto(ctx, photoDataUrl) {
     ctx.fillRect(x, y, width, height);
 
     // Border
-    ctx.strokeStyle = "#666";
+    ctx.strokeStyle = "#999";
     ctx.lineWidth = 1.5;
     ctx.strokeRect(x, y, width, height);
 
@@ -77,13 +77,10 @@ function drawPhoto(ctx, photoDataUrl) {
         img.src = photoDataUrl;
     } else {
         // Default silhouette
-        const grad = ctx.createLinearGradient(x, y, x, y + height);
-        grad.addColorStop(0, "#d4d4d4");
-        grad.addColorStop(1, "#e8e8e8");
-        ctx.fillStyle = grad;
+        ctx.fillStyle = "#e8e8e8";
         ctx.fillRect(x, y, width, height);
 
-        ctx.fillStyle = "#999";
+        ctx.fillStyle = "#aaa";
         // Body
         ctx.beginPath();
         ctx.moveTo(x + width * 0.15, y + height * 0.85);
@@ -97,7 +94,7 @@ function drawPhoto(ctx, photoDataUrl) {
         ctx.arc(x + width / 2, y + height * 0.32, width * 0.2, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = "#777";
+        ctx.fillStyle = "#888";
         ctx.font = "12px Arial";
         ctx.textAlign = "center";
         ctx.fillText("PHOTO", x + width / 2, y + height - 15);
@@ -107,15 +104,15 @@ function drawPhoto(ctx, photoDataUrl) {
 }
 
 // ============================================================
-// REALISTIC PAN CARD - LIGHT BLUE SHADE
+// PAN CARD - EXACT MATCH TO REFERENCE IMAGE
 // ============================================================
 
 function renderPanCard(ctx, person) {
     const w = ctx.canvas.width;
     const h = ctx.canvas.height;
 
-    // === BACKGROUND - LIGHT BLUE GRADIENT ===
-    const bgGrad = ctx.createLinearGradient(0, 0, w, h);
+    // === BACKGROUND - Light Blue Shade ===
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
     bgGrad.addColorStop(0, "#e8f0fe");
     bgGrad.addColorStop(0.3, "#f0f5ff");
     bgGrad.addColorStop(0.7, "#f0f5ff");
@@ -123,19 +120,19 @@ function renderPanCard(ctx, person) {
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, w, h);
 
-    // === OUTER BORDER (Dark Red) ===
+    // === MAIN RED BORDER ===
     ctx.strokeStyle = "#8b1a1a";
-    ctx.lineWidth = 3;
-    ctx.strokeRect(12, 12, w - 24, h - 24);
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(15, 15, w - 30, h - 30);
 
-    // === INNER BORDER (Gold/Brown) ===
+    // === INNER BORDER (Thin) ===
     ctx.strokeStyle = "#c4a060";
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(20, 20, w - 40, h - 40);
+    ctx.lineWidth = 1;
+    ctx.strokeRect(22, 22, w - 44, h - 44);
 
-    // === WATERMARK / SEAL ===
+    // === WATERMARK ===
     ctx.save();
-    ctx.globalAlpha = 0.05;
+    ctx.globalAlpha = 0.04;
     ctx.textAlign = "center";
     ctx.fillStyle = "#8b1a1a";
     ctx.font = "bold 120px 'Arial Unicode MS', sans-serif";
@@ -147,74 +144,64 @@ function renderPanCard(ctx, person) {
     ctx.textAlign = "left";
     ctx.fillStyle = "#8b1a1a";
     ctx.font = "bold 22px 'Arial Unicode MS', 'Noto Sans Devanagari', Arial, sans-serif";
-    ctx.fillText("आयकर विभाग", 40, 50);
-
-    // Left: Income Tax Department (English)
-    ctx.fillStyle = "#4a4a4a";
-    ctx.font = "bold 12px Arial, sans-serif";
-    ctx.fillText("INCOME TAX DEPARTMENT", 40, 70);
+    ctx.fillText("आयवकर विभाग", 45, 55);
 
     // Right: Government of India (Hindi)
     ctx.textAlign = "right";
     ctx.fillStyle = "#8b1a1a";
-    ctx.font = "bold 20px 'Arial Unicode MS', 'Noto Sans Devanagari', Arial, sans-serif";
-    ctx.fillText("भारत सरकार", w - 40, 50);
-
-    // Right: Government of India (English)
-    ctx.fillStyle = "#4a4a4a";
-    ctx.font = "bold 11px Arial, sans-serif";
-    ctx.fillText("GOVERNMENT OF INDIA", w - 40, 70);
+    ctx.font = "bold 22px 'Arial Unicode MS', 'Noto Sans Devanagari', Arial, sans-serif";
+    ctx.fillText("मारत सरकार", w - 45, 55);
 
     // === DIVIDER LINE ===
     ctx.strokeStyle = "#8b1a1a";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(35, 82);
-    ctx.lineTo(w - 35, 82);
+    ctx.moveTo(35, 75);
+    ctx.lineTo(w - 35, 75);
     ctx.stroke();
 
     // === MAIN TITLE ===
     ctx.textAlign = "center";
     ctx.fillStyle = "#1a1a1a";
-    ctx.font = "bold 18px 'Arial Unicode MS', 'Noto Sans Devanagari', Arial, sans-serif";
-    ctx.fillText("स्थायी लेखा संख्या कार्ड", w / 2, 112);
+    ctx.font = "bold 20px 'Arial Unicode MS', 'Noto Sans Devanagari', Arial, sans-serif";
+    ctx.fillText("स्थायी लेखा संख्या कार्ड", w / 2, 105);
 
     ctx.fillStyle = "#4a4a4a";
-    ctx.font = "bold 13px Arial, sans-serif";
-    ctx.fillText("Permanent Account Number Card", w / 2, 133);
+    ctx.font = "bold 15px Arial, sans-serif";
+    ctx.fillText("Permanent Account Number Card", w / 2, 130);
 
     // === PAN NUMBER ===
     const panNumber = person.pan || "ABCDE1234F";
     ctx.textAlign = "center";
     ctx.fillStyle = "#8b1a1a";
     ctx.font = "bold 32px 'Courier New', monospace";
-    ctx.fillText(panNumber, w / 2, 182);
+    ctx.fillText(panNumber, w / 2, 178);
 
     // Decorative line under PAN
     ctx.strokeStyle = "#c4a060";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(w / 2 - 130, 190);
-    ctx.lineTo(w / 2 + 130, 190);
+    ctx.moveTo(w / 2 - 130, 185);
+    ctx.lineTo(w / 2 + 130, 185);
     ctx.stroke();
 
     // === FIELDS ===
-    const startX = 45;
+    const startX = 50;
     let yPos = 215;
     const lineGap = 32;
 
     function drawPanField(label, value, y) {
         // Label (Hindi + English)
         ctx.textAlign = "left";
-        ctx.fillStyle = "#5a5a5a";
-        ctx.font = "11px Arial, sans-serif";
+        ctx.fillStyle = "#4a4a4a";
+        ctx.font = "13px Arial, sans-serif";
         ctx.fillText(label, startX, y);
 
-        // Value (Bold, Dark)
+        // Value (Bold)
         ctx.fillStyle = "#1a1a1a";
         ctx.font = "bold 16px Arial, sans-serif";
         const displayValue = value || "NOT AVAILABLE";
-        ctx.fillText(displayValue, startX + 175, y);
+        ctx.fillText(displayValue, startX + 180, y);
     }
 
     // Name
@@ -231,53 +218,53 @@ function renderPanCard(ctx, person) {
 
     // === SIGNATURE ===
     ctx.textAlign = "left";
-    ctx.fillStyle = "#5a5a5a";
-    ctx.font = "11px Arial, sans-serif";
-    ctx.fillText("स्वतः / Signature", startX, yPos);
+    ctx.fillStyle = "#4a4a4a";
+    ctx.font = "13px Arial, sans-serif";
+    ctx.fillText("स्वतंत्र / Signature", startX, yPos);
 
     // Signature line
     ctx.strokeStyle = "#1a1a1a";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(startX + 175, yPos - 4);
-    ctx.lineTo(startX + 175 + 190, yPos - 4);
+    ctx.moveTo(startX + 180, yPos - 4);
+    ctx.lineTo(startX + 180 + 200, yPos - 4);
     ctx.stroke();
 
     // Signature text (cursive)
     ctx.fillStyle = "#1a1a1a";
     ctx.font = "italic 18px 'Brush Script MT', 'Segoe Script', cursive";
     const sigName = String(person.name || "Applicant").split(" ")[0];
-    ctx.fillText(sigName, startX + 178, yPos - 8);
+    ctx.fillText(sigName, startX + 183, yPos - 8);
 
     // === ADDRESS ===
     if (person.address) {
-        yPos += 45;
+        yPos += 48;
         ctx.textAlign = "left";
-        ctx.fillStyle = "#5a5a5a";
-        ctx.font = "11px Arial, sans-serif";
+        ctx.fillStyle = "#4a4a4a";
+        ctx.font = "13px Arial, sans-serif";
         ctx.fillText("पता / Address", startX, yPos);
 
         ctx.fillStyle = "#1a1a1a";
         ctx.font = "14px Arial, sans-serif";
-        wrapText(ctx, person.address || "", startX + 175, yPos, 370, 20);
+        wrapText(ctx, person.address || "", startX + 180, yPos, 360, 20);
     }
 
-    // === BOTTOM TEXT ===
+    // === BOTTOM DISCLAIMER ===
     ctx.textAlign = "center";
     ctx.fillStyle = "#8b1a1a";
-    ctx.font = "bold 10px Arial, sans-serif";
-    ctx.fillText("This is a synthetic test document - Not for official use", w / 2, h - 16);
+    ctx.font = "bold 9px Arial, sans-serif";
+    ctx.fillText("This is a synthetic test document - Not for official use", w / 2, h - 18);
 }
 
 // ============================================================
-// REALISTIC AADHAAR CARD
+// AADHAAR CARD
 // ============================================================
 
 function renderAadhaarCard(ctx, person) {
     const w = ctx.canvas.width;
     const h = ctx.canvas.height;
 
-    // === BACKGROUND WITH SUBTLE GRADIENT ===
+    // === BACKGROUND ===
     const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
     bgGrad.addColorStop(0, "#f8fafc");
     bgGrad.addColorStop(0.5, "#ffffff");
@@ -285,15 +272,15 @@ function renderAadhaarCard(ctx, person) {
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, w, h);
 
-    // === MAIN BORDER (Dark Blue) ===
+    // === MAIN BORDER ===
     ctx.strokeStyle = "#1a3c6e";
     ctx.lineWidth = 2.5;
-    ctx.strokeRect(12, 12, w - 24, h - 24);
+    ctx.strokeRect(15, 15, w - 30, h - 30);
 
-    // === INNER BORDER (Light Blue) ===
+    // === INNER BORDER ===
     ctx.strokeStyle = "#93b5d9";
     ctx.lineWidth = 1;
-    ctx.strokeRect(20, 20, w - 40, h - 40);
+    ctx.strokeRect(23, 23, w - 46, h - 46);
 
     // === WATERMARK ===
     ctx.save();
@@ -307,12 +294,12 @@ function renderAadhaarCard(ctx, person) {
     // === HEADER ===
     ctx.textAlign = "center";
 
-    // Government of India (Hindi) - Orange/Brown
+    // Government of India (Hindi)
     ctx.fillStyle = "#b45309";
     ctx.font = "bold 24px 'Arial Unicode MS', 'Noto Sans Devanagari', Arial, sans-serif";
     ctx.fillText("भारत सरकार", w / 2, 50);
 
-    // Government of India (English) - Dark Green
+    // Government of India (English)
     ctx.fillStyle = "#166534";
     ctx.font = "bold 15px Arial, sans-serif";
     ctx.fillText("GOVERNMENT OF INDIA", w / 2, 76);
@@ -341,7 +328,7 @@ function renderAadhaarCard(ctx, person) {
     ctx.font = "bold 18px Arial, sans-serif";
     ctx.fillText("AADHAAR", w / 2, 158);
 
-    // === FIELDS (NAME, DOB, GENDER) ===
+    // === FIELDS ===
     const startX = 60;
     let yPos = 200;
     const lineGap = 30;
@@ -390,7 +377,7 @@ function renderAadhaarCard(ctx, person) {
 
     // === ADDRESS ===
     if (person.address) {
-        yPos += 45;
+        yPos += 48;
         ctx.textAlign = "left";
         ctx.fillStyle = "#4b5563";
         ctx.font = "bold 13px Arial, sans-serif";
@@ -405,7 +392,7 @@ function renderAadhaarCard(ctx, person) {
     ctx.textAlign = "center";
     ctx.fillStyle = "#9ca3af";
     ctx.font = "9px Arial, sans-serif";
-    ctx.fillText("Synthetic test document - Not for official use", w / 2, h - 16);
+    ctx.fillText("Synthetic test document - Not for official use", w / 2, h - 18);
 }
 
 // ============================================================
