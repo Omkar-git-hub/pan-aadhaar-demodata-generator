@@ -1,716 +1,479 @@
-// js/app.js
+// js/app.js - Refactored Version
 
-let excelRows = [];
-let currentPerson = null;
-let photoDataUrl = null;
-let currentType = "PAN";
+// ============================================================
+// STATE MANAGEMENT
+// ============================================================
+
+const AppState = {
+    excelRows: [],
+    currentPerson: null,
+    photoDataUrl: null,
+    currentType: "PAN"
+};
+
+// ============================================================
+// DOM HELPERS
+// ============================================================
 
 const $ = id => document.getElementById(id);
 const canvas = $("documentCanvas");
 
+// ============================================================
+// PHOTO HANDLING
+// ============================================================
 
-// ============================================================
-// PHOTO UPLOAD
-// ============================================================
+function handlePhotoUpload(file) {
+    if (!file) {
+        AppState.photoDataUrl = null;
+        refreshPreview();
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+        AppState.photoDataUrl = reader.result;
+        refreshPreview();
+    };
+    reader.readAsDataURL(file);
+}
 
 $("photo").addEventListener("change", e => {
-  const f = e.target.files[0];
-
-  if (!f) {
-    photoDataUrl = null;
-    refreshPreview();
-    return;
-  }
-
-  const r = new FileReader();
-
-  r.onload = () => {
-    photoDataUrl = r.result;
-    refreshPreview();
-  };
-
-  r.readAsDataURL(f);
+    handlePhotoUpload(e.target.files[0]);
 });
 
-
 // ============================================================
-// PREVIEW
+// PREVIEW SYSTEM
 // ============================================================
 
-function refreshPreview(type = currentType) {
-  currentType = type;
-
-  const person = currentPerson || {
-    name: $("name").value.trim() || "OMKAR GUNDARE",
-    dob: $("dob").value
-      ? normalizeDate($("dob").value)
-      : "11/08/2002",
-    gender: $("gender").value || "Male",
-    address: $("address").value.trim() || "Latur, Maharashtra",
-    parentName: $("parentName").value.trim() || "Test Parent",
-    ...makeTestIds(0)
-  };
-
-  drawSyntheticDocument(
-    canvas,
-    person,
-    type,
-    photoDataUrl
-  );
+function getDefaultPerson() {
+    return {
+        name: $("name").value.trim() || "OMKAR GUNDARE",
+        dob: $("dob").value ? normalizeDate($("dob").value) : "11/08/2002",
+        gender: $("gender").value || "Male",
+        address: $("address").value.trim() || "Latur, Maharashtra",
+        parentName: $("parentName").value.trim() || "Test Parent",
+        ...makeTestIds(0)
+    };
 }
 
+function refreshPreview(type = AppState.currentType) {
+    AppState.currentType = type;
+    const person = AppState.currentPerson || getDefaultPerson();
+    drawSyntheticDocument(canvas, person, type, AppState.photoDataUrl);
+}
 
-// ============================================================
-// PREVIEW BUTTONS
-// ============================================================
-
+// Preview button handlers
 $("previewPan").onclick = () => refreshPreview("PAN");
-
 $("previewAadhaar").onclick = () => refreshPreview("AADHAAR");
 
-
 // ============================================================
-// PERSON FORM
-// ============================================================
-
-$("personForm").addEventListener("submit", e => {
-  e.preventDefault();
-
-  currentPerson = {
-    ...readForm(),
-    ...makeTestIds(0)
-  };
-
-  refreshPreview("PAN");
-
-  enableButtons(true);
-});
-
-
-// ============================================================
-// CLEAR BUTTON
+// FORM HANDLING
 // ============================================================
 
-$("clearBtn").onclick = () => {
-  $("personForm").reset();
-
-  photoDataUrl = null;
-  currentPerson = null;
-  excelRows = [];
-
-  if ($("rowsBody")) {
-    $("rowsBody").innerHTML = "";
-  }
-
-  if ($("rowCount")) {
-    $("rowCount").textContent = "0 rows";
-  }
-
-  canvas
-    .getContext("2d")
-    .clearRect(0, 0, canvas.width, canvas.height);
-
-  enableButtons(false);
-};
-
-
-// ============================================================
-// SAMPLE EXCEL DOWNLOAD
-// ============================================================
-
-$("downloadTemplate").onclick = () => {
-  if (!window.OCR_TEMPLATE_BASE64) {
-    setStatus("Sample Excel template is not available.");
-    return;
-  }
-
-  const binary = atob(window.OCR_TEMPLATE_BASE64);
-
-  const bytes = new Uint8Array(binary.length);
-
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-
-  const blob = new Blob(
-    [bytes],
-    {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    }
-  );
-
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement("a");
-
-  a.href = url;
-  a.download = "ocr-test-data-template.xlsx";
-
-  document.body.appendChild(a);
-
-  a.click();
-
-  a.remove();
-
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-  }, 1000);
-
-  setStatus("Sample Excel downloaded.");
-};
-
-
-// ============================================================
-// DOWNLOAD BUTTONS
-// ============================================================
-
-$("downloadPan").onclick = () => {
-  downloadPerson("PAN");
-};
-
-$("downloadAadhaar").onclick = () => {
-  downloadPerson("AADHAAR");
-};
-
-$("downloadAllPan").onclick = () => {
-  downloadAll("PAN");
-};
-
-$("downloadAllAadhaar").onclick = () => {
-  downloadAll("AADHAAR");
-};
-
-
-// ============================================================
-// NEW ZIP DOWNLOAD BUTTONS
-// ============================================================
-
-$("downloadPanZip").onclick = () => {
-  downloadAllZip("PAN");
-};
-
-$("downloadAadhaarZip").onclick = () => {
-  downloadAllZip("AADHAAR");
-};
-
-
-// ============================================================
-// DOWNLOAD SINGLE DOCUMENT
-// ============================================================
-
-async function downloadPerson(type) {
-  const person = currentPerson || {
-    name: $("name").value.trim() || "OMKAR GUNDARE",
-
-    dob: $("dob").value
-      ? normalizeDate($("dob").value)
-      : "11/08/2002",
-
-    gender: $("gender").value || "Male",
-
-    address: $("address").value.trim()
-      || "Latur, Maharashtra",
-
-    parentName: $("parentName").value.trim()
-      || "Test Parent",
-
-    ...makeTestIds(0)
-  };
-
-  drawSyntheticDocument(
-    canvas,
-    person,
-    type,
-    photoDataUrl
-  );
-
-  await new Promise(resolve => {
-    setTimeout(resolve, 100);
-  });
-
-  const id =
-    type === "PAN"
-      ? person.pan
-      : "aadhaar-card";
-
-  await downloadCanvas(
-    canvas,
-    `synthetic-${type.toLowerCase()}-${safeName(person.name)}-${id}.jpg`
-  );
+function readForm() {
+    const date = $("dob").value;
+    return {
+        name: $("name").value.trim(),
+        dob: date ? normalizeDate(date) : "",
+        gender: $("gender").value,
+        address: $("address").value.trim(),
+        parentName: $("parentName")?.value.trim() || ""
+    };
 }
 
+function handleFormSubmit(e) {
+    e.preventDefault();
+    
+    // Generate PAN and Aadhar automatically
+    const ids = makeTestIds(0);
+    
+    AppState.currentPerson = {
+        ...readForm(),
+        pan: ids.pan,
+        aadhaar: ids.aadhaar
+    };
+    
+    refreshPreview("PAN");
+    enableButtons(true);
+    setStatus("✅ PAN and Aadhar generated successfully!");
+}
+
+$("personForm").addEventListener("submit", handleFormSubmit);
 
 // ============================================================
-// DOWNLOAD ALL INDIVIDUAL IMAGES
+// CLEAR FUNCTIONALITY
 // ============================================================
 
-async function downloadAll(type) {
-  if (!excelRows.length) {
-    setStatus("No Excel rows available.");
-    return;
-  }
+function handleClear() {
+    $("personForm").reset();
+    AppState.photoDataUrl = null;
+    AppState.currentPerson = null;
+    AppState.excelRows = [];
+    
+    if ($("rowsBody")) $("rowsBody").innerHTML = "";
+    if ($("rowCount")) $("rowCount").textContent = "0 rows";
+    
+    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    enableButtons(false);
+    setStatus("Cleared all data");
+}
 
-  setStatus(
-    `Generating ${excelRows.length} ${type} images...`
-  );
+$("clearBtn").onclick = handleClear;
 
-  for (let i = 0; i < excelRows.length; i++) {
-    const p = excelRows[i];
+// ============================================================
+// EXCEL TEMPLATE DOWNLOAD
+// ============================================================
 
-    drawSyntheticDocument(
-      canvas,
-      p,
-      type,
-      photoDataUrl
-    );
+function downloadTemplate() {
+    if (!window.OCR_TEMPLATE_BASE64) {
+        setStatus("Sample Excel template is not available.");
+        return;
+    }
 
-    await new Promise(resolve => {
-      setTimeout(resolve, 80);
+    const binary = atob(window.OCR_TEMPLATE_BASE64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+
+    const blob = new Blob([bytes], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     });
 
-    await downloadCanvas(
-      canvas,
-      `synthetic-${type.toLowerCase()}-${String(i + 1).padStart(3, "0")}-${safeName(p.name)}.jpg`
-    );
-
-    setStatus(
-      `Generated ${i + 1} / ${excelRows.length} ${type} images`
-    );
-  }
-
-  setStatus(
-    `Completed: ${excelRows.length} ${type} images`
-  );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "ocr-test-data-template.xlsx";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setStatus("Sample Excel downloaded.");
 }
 
-
-// ============================================================
-// DOWNLOAD ALL IMAGES AS ZIP
-// ============================================================
-
-async function downloadAllZip(type) {
-  if (!excelRows.length) {
-    setStatus("No Excel rows available.");
-    return;
-  }
-
-  // Check whether JSZip is loaded
-  if (typeof JSZip === "undefined") {
-    setStatus(
-      "ZIP library is not available. Please check the JSZip CDN."
-    );
-    return;
-  }
-
-  const zip = new JSZip();
-
-  const folderName =
-    type === "PAN"
-      ? "PAN_Test_Documents"
-      : "Aadhaar_Test_Documents";
-
-  const folder = zip.folder(folderName);
-
-  setStatus(
-    `Preparing ${excelRows.length} ${type} images...`
-  );
-
-  for (let i = 0; i < excelRows.length; i++) {
-    const person = excelRows[i];
-
-    // Render document on existing canvas
-    drawSyntheticDocument(
-      canvas,
-      person,
-      type,
-      photoDataUrl
-    );
-
-    // Wait for canvas rendering
-    await new Promise(resolve => {
-      setTimeout(resolve, 100);
-    });
-
-    // Convert canvas to JPG
-    const blob = await canvasToJpgBlob(
-      canvas,
-      0.78
-    );
-
-    if (!blob) {
-      setStatus(
-        `Failed to generate ${type} image ${i + 1}.`
-      );
-      return;
-    }
-
-    const filename =
-      `synthetic-${type.toLowerCase()}-` +
-      `${String(i + 1).padStart(3, "0")}-` +
-      `${safeName(person.name)}.jpg`;
-
-    // Add image to ZIP
-    folder.file(
-      filename,
-      blob
-    );
-
-    setStatus(
-      `Added ${i + 1} / ${excelRows.length} ${type} images to ZIP`
-    );
-  }
-
-  // Generate ZIP file
-  setStatus(
-    `Creating ${type} ZIP file...`
-  );
-
-  const zipBlob = await zip.generateAsync({
-    type: "blob",
-
-    compression: "DEFLATE",
-
-    compressionOptions: {
-      level: 6
-    }
-  });
-
-  // Download ZIP
-  const url = URL.createObjectURL(zipBlob);
-
-  const a = document.createElement("a");
-
-  a.href = url;
-
-  a.download = `${folderName}.zip`;
-
-  document.body.appendChild(a);
-
-  a.click();
-
-  a.remove();
-
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-  }, 1000);
-
-  setStatus(
-    `Completed: ${excelRows.length} ${type} images downloaded as ZIP.`
-  );
-}
-
+$("downloadTemplate").onclick = downloadTemplate;
 
 // ============================================================
 // EXCEL UPLOAD
 // ============================================================
 
-$("excelFile").addEventListener(
-  "change",
-  async e => {
-    const file = e.target.files[0];
+function processExcelData(rows, keys) {
+    return rows.map((r, i) => {
+        const find = h => {
+            const key = keys.find(k => k.trim().toLowerCase() === h.toLowerCase());
+            return key ? r[key] : "";
+        };
 
-    if (!file) {
-      return;
-    }
+        const parentKey = keys.find(k => {
+            const normalized = k.trim().toLowerCase();
+            return normalized === "parentname" || normalized === "fathername";
+        });
+
+        // Generate PAN and Aadhar automatically
+        const ids = makeTestIds(i);
+
+        return {
+            name: String(find("Name")).trim(),
+            dob: normalizeDate(find("DOB")),
+            gender: String(find("Gender")).trim(),
+            address: String(find("Address")).trim(),
+            parentName: parentKey ? String(r[parentKey] || "").trim() : "",
+            pan: ids.pan,
+            aadhaar: ids.aadhaar
+        };
+    }).filter(x => x.name);
+}
+
+async function handleExcelUpload(file) {
+    if (!file) return;
 
     try {
-      const data = await file.arrayBuffer();
+        const data = await file.arrayBuffer();
+        const wb = XLSX.read(data, { type: "array", cellDates: true });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-      const wb = XLSX.read(
-        data,
-        {
-          type: "array",
-          cellDates: true
+        if (!rows.length) {
+            setStatus("Excel contains no data rows.");
+            return;
         }
-      );
 
-      const sheet =
-        wb.Sheets[wb.SheetNames[0]];
-
-      const rows =
-        XLSX.utils.sheet_to_json(
-          sheet,
-          {
-            defval: ""
-          }
+        const keys = Object.keys(rows[0]);
+        const required = ["Name", "DOB", "Gender", "Address"];
+        const missing = required.filter(h => 
+            !keys.some(k => k.trim().toLowerCase() === h.toLowerCase())
         );
 
-      if (!rows.length) {
-        setStatus(
-          "Excel contains no data rows."
-        );
+        if (missing.length) {
+            setStatus("Missing headers: " + missing.join(", "));
+            return;
+        }
 
-        return;
-      }
+        AppState.excelRows = processExcelData(rows, keys);
+        renderRows();
+        setStatus(`✅ ${AppState.excelRows.length} rows loaded. PAN and Aadhar generated.`);
 
-      const keys =
-        Object.keys(rows[0]);
-
-      const required = [
-        "Name",
-        "DOB",
-        "Gender",
-        "Address"
-      ];
-
-      const missing =
-        required.filter(
-          h =>
-            !keys.some(
-              k =>
-                k.trim().toLowerCase()
-                === h.toLowerCase()
-            )
-        );
-
-      if (missing.length) {
-        setStatus(
-          "Missing headers: "
-          + missing.join(", ")
-        );
-
-        return;
-      }
-
-      excelRows =
-        rows
-          .map((r, i) => {
-
-            const find = h => {
-              const key =
-                keys.find(
-                  k =>
-                    k.trim().toLowerCase()
-                    === h.toLowerCase()
-                );
-
-              return key
-                ? r[key]
-                : "";
-            };
-
-            const parentKey =
-              keys.find(
-                k => {
-                  const normalized =
-                    k.trim().toLowerCase();
-
-                  return (
-                    normalized === "parentname"
-                    ||
-                    normalized === "fathername"
-                  );
-                }
-              );
-
-            return {
-              name:
-                String(
-                  find("Name")
-                ).trim(),
-
-              dob:
-                normalizeDate(
-                  find("DOB")
-                ),
-
-              gender:
-                String(
-                  find("Gender")
-                ).trim(),
-
-              address:
-                String(
-                  find("Address")
-                ).trim(),
-
-              parentName:
-                parentKey
-                  ? String(
-                      r[parentKey] || ""
-                    ).trim()
-                  : "",
-
-              ...makeTestIds(i)
-            };
-          })
-          .filter(
-            x => x.name
-          );
-
-      renderRows();
-
-      setStatus(
-        `${excelRows.length} rows loaded.`
-      );
-
-      if (excelRows.length) {
-        currentPerson =
-          excelRows[0];
-
-        refreshPreview("PAN");
-
-        enableButtons(true);
-      }
+        if (AppState.excelRows.length) {
+            AppState.currentPerson = AppState.excelRows[0];
+            refreshPreview("PAN");
+            enableButtons(true);
+        }
 
     } catch (err) {
-      setStatus(
-        "Could not read Excel: "
-        + err.message
-      );
+        setStatus("Could not read Excel: " + err.message);
     }
-  }
-);
+}
 
+$("excelFile").addEventListener("change", async e => {
+    await handleExcelUpload(e.target.files[0]);
+});
 
 // ============================================================
-// ENABLE / DISABLE BUTTONS
+// DOWNLOAD FUNCTIONS
+// ============================================================
+
+function getPersonForDownload() {
+    return AppState.currentPerson || {
+        name: $("name").value.trim() || "OMKAR GUNDARE",
+        dob: $("dob").value ? normalizeDate($("dob").value) : "11/08/2002",
+        gender: $("gender").value || "Male",
+        address: $("address").value.trim() || "Latur, Maharashtra",
+        parentName: $("parentName").value.trim() || "Test Parent",
+        ...makeTestIds(0)
+    };
+}
+
+async function downloadPerson(type) {
+    const person = getPersonForDownload();
+    
+    drawSyntheticDocument(canvas, person, type, AppState.photoDataUrl);
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    const id = type === "PAN" ? person.pan : "aadhaar-card";
+    await downloadCanvas(
+        canvas,
+        `synthetic-${type.toLowerCase()}-${safeName(person.name)}-${id}.jpg`
+    );
+    setStatus(`Downloaded ${type} card for ${person.name}`);
+}
+
+// Download button handlers
+$("downloadPan").onclick = () => downloadPerson("PAN");
+$("downloadAadhaar").onclick = () => downloadPerson("AADHAAR");
+
+// ============================================================
+// BULK DOWNLOAD - INDIVIDUAL IMAGES
+// ============================================================
+
+async function downloadAll(type) {
+    if (!AppState.excelRows.length) {
+        setStatus("No Excel rows available.");
+        return;
+    }
+
+    setStatus(`Generating ${AppState.excelRows.length} ${type} images...`);
+
+    for (let i = 0; i < AppState.excelRows.length; i++) {
+        const person = AppState.excelRows[i];
+        
+        drawSyntheticDocument(canvas, person, type, AppState.photoDataUrl);
+        await new Promise(resolve => setTimeout(resolve, 80));
+        
+        await downloadCanvas(
+            canvas,
+            `synthetic-${type.toLowerCase()}-${String(i + 1).padStart(3, "0")}-${safeName(person.name)}.jpg`
+        );
+        
+        setStatus(`Generated ${i + 1} / ${AppState.excelRows.length} ${type} images`);
+    }
+
+    setStatus(`Completed: ${AppState.excelRows.length} ${type} images`);
+}
+
+$("downloadAllPan").onclick = () => downloadAll("PAN");
+$("downloadAllAadhaar").onclick = () => downloadAll("AADHAAR");
+
+// ============================================================
+// BULK DOWNLOAD - ZIP
+// ============================================================
+
+async function downloadAllZip(type) {
+    if (!AppState.excelRows.length) {
+        setStatus("No Excel rows available.");
+        return;
+    }
+
+    if (typeof JSZip === "undefined") {
+        setStatus("ZIP library is not available. Please check the JSZip CDN.");
+        return;
+    }
+
+    const zip = new JSZip();
+    const folderName = type === "PAN" ? "PAN_Test_Documents" : "Aadhaar_Test_Documents";
+    const folder = zip.folder(folderName);
+
+    setStatus(`Preparing ${AppState.excelRows.length} ${type} images...`);
+
+    for (let i = 0; i < AppState.excelRows.length; i++) {
+        const person = AppState.excelRows[i];
+        
+        drawSyntheticDocument(canvas, person, type, AppState.photoDataUrl);
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const blob = await canvasToJpgBlob(canvas, 0.78);
+        if (!blob) {
+            setStatus(`Failed to generate ${type} image ${i + 1}.`);
+            return;
+        }
+
+        const filename = `synthetic-${type.toLowerCase()}-${String(i + 1).padStart(3, "0")}-${safeName(person.name)}.jpg`;
+        folder.file(filename, blob);
+        setStatus(`Added ${i + 1} / ${AppState.excelRows.length} ${type} images to ZIP`);
+    }
+
+    setStatus(`Creating ${type} ZIP file...`);
+    const zipBlob = await zip.generateAsync({
+        type: "blob",
+        compression: "DEFLATE",
+        compressionOptions: { level: 6 }
+    });
+
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${folderName}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setStatus(`Completed: ${AppState.excelRows.length} ${type} images downloaded as ZIP.`);
+}
+
+$("downloadPanZip").onclick = () => downloadAllZip("PAN");
+$("downloadAadhaarZip").onclick = () => downloadAllZip("AADHAAR");
+
+// ============================================================
+// UI HELPERS
 // ============================================================
 
 function enableButtons(on) {
-  [
-    "downloadPan",
-    "downloadAadhaar",
-    "downloadAllPan",
-    "downloadAllAadhaar",
+    const buttons = [
+        "downloadPan", "downloadAadhaar",
+        "downloadAllPan", "downloadAllAadhaar",
+        "downloadPanZip", "downloadAadhaarZip"
+    ];
+    
+    buttons.forEach(id => {
+        if ($(id)) $(id).disabled = !on;
+    });
+}
 
-    // New ZIP buttons
-    "downloadPanZip",
-    "downloadAadhaarZip"
-
-  ].forEach(id => {
-
-    if ($(id)) {
-      $(id).disabled = !on;
+function setStatus(message) {
+    if ($("fileStatus")) {
+        $("fileStatus").textContent = message;
     }
-
-  });
 }
-
-
-// ============================================================
-// READ FORM
-// ============================================================
-
-function readForm() {
-  const date = $("dob").value;
-
-  return {
-    name:
-      $("name").value.trim(),
-
-    dob:
-      date
-        ? normalizeDate(date)
-        : "",
-
-    gender:
-      $("gender").value,
-
-    address:
-      $("address").value.trim(),
-
-    parentName:
-      $("parentName")?.value.trim()
-      || ""
-  };
-}
-
-
-// ============================================================
-// SAFE FILE NAME
-// ============================================================
-
-function safeName(s) {
-  return String(s)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    || "document";
-}
-
-
-// ============================================================
-// RENDER EXCEL ROWS
-// ============================================================
 
 function renderRows() {
-  if ($("rowCount")) {
-    $("rowCount").textContent =
-      `${excelRows.length} rows`;
-  }
+    if ($("rowCount")) {
+        $("rowCount").textContent = `${AppState.excelRows.length} rows`;
+    }
 
-  if ($("rowsBody")) {
-
-    $("rowsBody").innerHTML =
-      excelRows
-        .map((p, i) => `
-          <tr>
-            <td>${i + 1}</td>
-
-            <td>
-              ${esc(p.name)}
-            </td>
-
-            <td>
-              ${esc(p.dob)}
-            </td>
-
-            <td>
-              ${esc(p.gender)}
-            </td>
-
-            <td>
-              ${esc(p.address)}
-            </td>
-
-            <td>
-              ${esc(p.pan)} / Redacted
-            </td>
-          </tr>
-        `)
-        .join("");
-  }
+    if ($("rowsBody")) {
+        $("rowsBody").innerHTML = AppState.excelRows
+            .map((p, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${esc(p.name)}</td>
+                    <td>${esc(p.dob)}</td>
+                    <td>${esc(p.gender)}</td>
+                    <td>${esc(p.address)}</td>
+                    <td>${esc(p.pan)} / ${esc(p.aadhaar)}</td>
+                </tr>
+            `)
+            .join("");
+    }
 }
 
-
-// ============================================================
-// HTML ESCAPE
-// ============================================================
+function safeName(s) {
+    return String(s)
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "") || "document";
+}
 
 function esc(s) {
-  return String(s).replace(
-    /[&<>"']/g,
-    m =>
-      ({
+    return String(s).replace(/[&<>"']/g, m => ({
         "&": "&amp;",
         "<": "&lt;",
         ">": "&gt;",
         '"': "&quot;",
         "'": "&#39;"
-      }[m])
-  );
+    }[m]));
 }
 
-
 // ============================================================
-// STATUS
+// BULK GENERATION (New Feature)
 // ============================================================
 
-function setStatus(s) {
-  if ($("fileStatus")) {
-    $("fileStatus").textContent = s;
-  }
+function generateBulkData(count = 10) {
+    const firstNames = ["RAHUL", "PRIYA", "AMIT", "SUNITA", "VIKRAM", "NEHA", "RAJ", "ANJALI"];
+    const lastNames = ["SHARMA", "VERMA", "PATEL", "KUMAR", "SINGH", "REDDY", "RAO", "GUPTA"];
+    const fatherNames = ["RAM", "MOHAN", "RAJ", "SURESH", "DINESH", "MAHESH", "RAMESH"];
+    const cities = ["MUMBAI", "DELHI", "BANGALORE", "HYDERABAD", "CHENNAI"];
+    const streets = ["MG Road", "Park Street", "Main Road", "Church Street"];
+    
+    const bulkData = [];
+    
+    for (let i = 0; i < count; i++) {
+        const ids = makeTestIds(i);
+        const first = firstNames[Math.floor(Math.random() * firstNames.length)];
+        const last = lastNames[Math.floor(Math.random() * lastNames.length)];
+        const father = fatherNames[Math.floor(Math.random() * fatherNames.length)];
+        const city = cities[Math.floor(Math.random() * cities.length)];
+        const street = streets[Math.floor(Math.random() * streets.length)];
+        
+        // Generate random DOB
+        const day = String(Math.floor(Math.random() * 28) + 1).padStart(2, '0');
+        const month = String(Math.floor(Math.random() * 12) + 1).padStart(2, '0');
+        const year = 1990 + Math.floor(Math.random() * 15);
+        
+        bulkData.push({
+            name: `${first} ${last}`,
+            dob: `${day}/${month}/${year}`,
+            gender: Math.random() > 0.5 ? "Male" : "Female",
+            address: `${Math.floor(Math.random() * 999) + 1}, ${street}, ${city}`,
+            parentName: `${father} ${last}`,
+            pan: ids.pan,
+            aadhaar: ids.aadhaar
+        });
+    }
+    
+    return bulkData;
 }
 
+// Add Bulk Generation button handler (if button exists)
+const bulkBtn = $("generateBulkBtn");
+if (bulkBtn) {
+    bulkBtn.addEventListener("click", () => {
+        const count = 10;
+        AppState.excelRows = generateBulkData(count);
+        renderRows();
+        setStatus(`✅ Generated ${count} random records with PAN and Aadhar`);
+        
+        if (AppState.excelRows.length) {
+            AppState.currentPerson = AppState.excelRows[0];
+            refreshPreview("PAN");
+            enableButtons(true);
+        }
+    });
+}
 
 // ============================================================
-// INITIAL RENDER
+// INITIALIZATION
 // ============================================================
 
-window.addEventListener(
-  "DOMContentLoaded",
-  () => {
+window.addEventListener("DOMContentLoaded", () => {
     refreshPreview("PAN");
-  }
-);
+    setStatus("Ready. Enter details and click Generate Preview.");
+});
